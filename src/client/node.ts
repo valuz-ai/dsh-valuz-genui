@@ -11,10 +11,11 @@
 
 import type {
   ChatConversationViewNode,
+  ConversationLocation,
+  ConversationMatch,
   ConversationNodeContext,
   ConversationNodeDefinition,
 } from '@deepseek-ai/dsh-client-runtime/client'
-import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { isGenuiSurfaceMeta } from '../meta.ts'
 import { extractCompleteArrayElements } from './partial-args.ts'
 
@@ -55,27 +56,40 @@ interface GenuiNodeState {
   argsRaw: string
   /** Authoritative surface, once the tool settled. */
   settled: SettledSurface | null
+  /** Render position: the seq/location of the generate_ui event, so the surface
+   * anchors at the tool call in the flow — not at step/start (which sorts to the top). */
+  anchorSeq: number | null
+  location: ConversationLocation | null
 }
 
-function foldChunk(state: GenuiNodeState, event: SessionEvent): GenuiNodeState {
+function foldMatch(state: GenuiNodeState, match: ConversationMatch): GenuiNodeState {
+  const event = match.event
   if (event.type === 'assistant/chunk') {
     const chunk = event.data.chunk
     if (chunk.type !== 'tool-call-delta') return state
-    let { renderIndex, surfaceId } = state
+    let { renderIndex, surfaceId, anchorSeq, location } = state
     if (chunk.name === GENERATE_UI_TOOL) {
       renderIndex = chunk.index
       surfaceId = String(chunk.id)
+      // Anchor the surface at the tool call, not the step boundary.
+      if (anchorSeq === null) {
+        anchorSeq = event.seq
+        location = match.location
+      }
     }
     if (renderIndex !== null && chunk.index === renderIndex) {
-      return { ...state, renderIndex, surfaceId, argsRaw: state.argsRaw + chunk.argumentsDelta }
+      return { ...state, renderIndex, surfaceId, anchorSeq, location, argsRaw: state.argsRaw + chunk.argumentsDelta }
     }
-    return { ...state, renderIndex, surfaceId }
+    return { ...state, renderIndex, surfaceId, anchorSeq, location }
   }
   if (event.type === 'tool/result') {
     const meta = event.data.meta
     if (isGenuiSurfaceMeta(meta)) {
       return {
         ...state,
+        // On replay (no streamed chunks) the tool/result is the anchor.
+        anchorSeq: state.anchorSeq ?? event.seq,
+        location: state.location ?? match.location,
         settled: {
           surfaceId: meta.surfaceId,
           document: meta.document,
@@ -90,7 +104,7 @@ function foldChunk(state: GenuiNodeState, event: SessionEvent): GenuiNodeState {
 }
 
 function initial(): GenuiNodeState {
-  return { renderIndex: null, surfaceId: null, argsRaw: '', settled: null }
+  return { renderIndex: null, surfaceId: null, argsRaw: '', settled: null, anchorSeq: null, location: null }
 }
 
 /** JSONL body of the complete A2UI messages authored so far. */
@@ -111,7 +125,7 @@ export const genuiSurfaceDefinition: ConversationNodeDefinition<GenuiNodeState> 
     return null
   },
   start: () => initial(),
-  update: (context, match) => foldChunk(context.state, match.event),
+  update: (context, match) => foldMatch(context.state, match),
   // Stream deltas coalesced to a frame; the settled result renders immediately.
   publication: (match) => (match.event.type === 'assistant/chunk' ? 'animation-frame' : 'immediate'),
   buildViewNode: (context: ConversationNodeContext<GenuiNodeState>): ChatConversationViewNode | null => {
@@ -124,8 +138,8 @@ export const genuiSurfaceDefinition: ConversationNodeDefinition<GenuiNodeState> 
       kind: 'genui-surface',
       id: context.id,
       target: 'chat',
-      anchorSeq: context.start.event.seq,
-      location: context.start.location,
+      anchorSeq: state.anchorSeq ?? context.start.event.seq,
+      location: state.location ?? context.start.location,
       visibility: 'visible',
       data,
     }

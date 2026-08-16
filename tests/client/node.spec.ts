@@ -10,14 +10,20 @@ const meta: GenuiSurfaceMeta = {
 }
 const toolResult = { type: 'tool/result', seq: 9, time: 0, data: { turn: 2, step: 1, meta } } as never
 
-/** Drive the definition through a match/start/update sequence. */
-function fold(events: unknown[]) {
-  let state = genuiSurfaceDefinition.start({ key: 'k', id: '2:1' } as never, { event: events[0] } as never, {} as never)
+const loc = { kind: 'step', turn: 2, step: 1 }
+
+/** Drive the definition through a match/start/update sequence; returns the built node. */
+function build(events: unknown[]) {
+  let state = genuiSurfaceDefinition.start({ key: 'k', id: '2:1' } as never, { event: events[0], location: loc } as never, {} as never)
   for (const event of events.slice(1)) {
-    state = genuiSurfaceDefinition.update({ key: 'k', id: '2:1', state } as never, { event } as never)
+    state = genuiSurfaceDefinition.update({ key: 'k', id: '2:1', state } as never, { event, location: loc } as never)
   }
-  const node = genuiSurfaceDefinition.buildViewNode?.({ key: 'k', id: '2:1', state, start: { event: events[0], location: { kind: 'step' } } } as never)
-  return (node?.data ?? null) as GenuiSurfaceChatData | null
+  return genuiSurfaceDefinition.buildViewNode?.({ key: 'k', id: '2:1', state, start: { event: events[0], location: loc } } as never) ?? null
+}
+
+/** The rendered data for a sequence, or null. */
+function fold(events: unknown[]) {
+  return (build(events)?.data ?? null) as GenuiSurfaceChatData | null
 }
 
 describe('genuiSurfaceDefinition', () => {
@@ -60,5 +66,19 @@ describe('genuiSurfaceDefinition', () => {
 
   it('renders from the settled result alone on replay (no chunks)', () => {
     expect(fold([stepStart, toolResult])?.status).toBe('success')
+  })
+
+  it('anchors at the generate_ui tool call, not step/start', () => {
+    // step/start is seq 1; the generate_ui delta is seq 5 — the surface must sort by the latter.
+    const node = build([
+      stepStart,
+      chunk(5, { type: 'tool-call-delta', index: 0, id: 'call-9', name: 'generate_ui', argumentsDelta: '{"messages":[{"a":1}' }),
+    ])
+    expect((node as { anchorSeq?: number } | null)?.anchorSeq).toBe(5)
+  })
+
+  it('anchors on the tool result when there were no streamed chunks (replay)', () => {
+    const node = build([stepStart, toolResult])
+    expect((node as { anchorSeq?: number } | null)?.anchorSeq).toBe(9)
   })
 })
