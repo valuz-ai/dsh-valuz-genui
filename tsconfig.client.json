@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "es2023",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsx": "react-jsx",
+    "types": [
+      "node"
+    ],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@valuz-genui/core": [
+        "../valuz-genui/packages/core/src/index.ts"
+      ],
+      "@valuz-genui/a2ui": [
+        "../valuz-genui/packages/a2ui/src/index.ts"
+      ],
+      "@valuz-genui/a2ui/catalog": [
+        "../valuz-genui/packages/a2ui/src/catalog/index.ts"
+      ],
+      "@valuz-genui/a2ui/react": [
+        "../valuz-genui/packages/a2ui/src/react/index.ts"
+      ],
+      "@valuz-genui/a2ui/stream": [
+        "../valuz-genui/packages/a2ui/src/stream/index.ts"
+      ],
+      "@valuz-genui/a2ui/theme": [
+        "../valuz-genui/packages/a2ui/src/theme/index.ts"
+      ],
+      "@valuz-genui/a2ui/styles.css": [
+        "../valuz-genui/packages/a2ui/src/styles.css"
+      ]
+    }
+  },
+  "include": [
+    "src/client",
+    "src/meta.ts",
+    "tests/client",
+    "css-modules.d.ts"
+  ]
+}

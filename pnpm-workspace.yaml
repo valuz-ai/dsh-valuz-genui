@@ -1,0 +1,11 @@
+# pnpm 10+ blocks dependency install scripts until reviewed here. koffi (a
+# transitive dependency of dsh dev packages) ships prebuilt binaries; esbuild is
+# needed by vite/vitest.
+allowBuilds:
+  esbuild: true
+  koffi: false
+peerDependencyRules:
+  allowedVersions:
+    # @a2ui/react declares react ^19 but uses only React-18 APIs; dsh's client platform is React 18.
+    '@a2ui/react>react': '>=18'
+    '@a2ui/react>react-dom': '>=18'
