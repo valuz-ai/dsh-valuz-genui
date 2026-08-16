@@ -14,7 +14,7 @@ const DOC = [
 ].join('\n')
 
 function data(overrides: Partial<GenuiSurfaceChatData> = {}): GenuiSurfaceChatData {
-  return { surfaceId: 'call-1', document: DOC, request: 'r', componentNames: ['Stack', 'Button'], warningCount: 0, edited: false, ...overrides }
+  return { surfaceId: 'call-1', document: DOC, status: 'success', componentNames: ['Stack', 'Button'], warningCount: 0, ...overrides }
 }
 
 describe('GenuiSurface', () => {

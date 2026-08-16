@@ -1,6 +1,6 @@
 /**
  * The durable contract shared by the host tool and the browser node: the
- * `tool/result.meta` payload one `generate_ui` call persists, and the
+ * `tool/result.meta` payload one `render_ui` call persists, and the
  * `<ui_action>` envelope a user interaction sends back to the agent.
  * Pure types and functions; imported by both halves.
  * @module dsh-valuz-genui/meta
@@ -19,20 +19,14 @@ export interface GenuiRejectedComponent {
 /** Persisted facts of one rendered surface (`tool/result.meta`). */
 export interface GenuiSurfaceMeta {
   kind: typeof GENUI_META_KIND
-  /** Stable surface identity: the tool call id. Models reference it to edit. */
+  /** Stable surface identity: the tool call id. */
   surfaceId: string
-  /** Canonical A2UI JSONL document. */
+  /** Canonical A2UI JSONL document (one message per line). */
   document: string
-  /** The request the model made. */
-  request: string
+  /** Optional title the model gave the surface. */
+  title?: string
   componentNames: string[]
   warnings: GenuiRejectedComponent[]
-  attempts: number
-  continuations: number
-  route: { provider: string; model: string }
-  usage?: { inputTokens: number; outputTokens: number }
-  /** Surface id this call edited, when it was an edit. */
-  editedSurfaceId?: string
 }
 
 /**
@@ -46,7 +40,6 @@ export function isGenuiSurfaceMeta(value: unknown): value is GenuiSurfaceMeta {
   return meta['kind'] === GENUI_META_KIND
     && typeof meta['surfaceId'] === 'string'
     && typeof meta['document'] === 'string'
-    && typeof meta['request'] === 'string'
     && Array.isArray(meta['componentNames'])
 }
 
@@ -68,8 +61,8 @@ function attribute(value: string): string {
 }
 
 /**
- * Render the message the browser sends when the user interacts with a
- * surface. Machine-parseable and model-readable at once.
+ * Render the message the browser sends when the user interacts with a surface.
+ * Machine-parseable and model-readable at once.
  * @param action - the interaction.
  * @returns e.g. `<ui_action surface="call-1" component="btn" name="refresh">{"range":"7d"}</ui_action>`.
  */

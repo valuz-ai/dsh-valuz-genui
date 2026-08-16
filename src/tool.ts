@@ -1,56 +1,56 @@
 /**
- * The `generate_ui` tool. Inside `execute` it runs the valuz generation loop
- * against the harness model (`ctx.llm` via a `DshStreamer`), keeps the full
- * A2UI document out of the model's context, and hands it to the browser node
- * through `tool/result.meta`.
+ * The `render_ui` tool. The MAIN model authors the A2UI document and passes it
+ * as `messages` (an array of A2UI message objects). The tool does NO model
+ * call: it serializes, validates, and persists the document to `tool/result.meta`
+ * (durable, replayed) and returns a short receipt. The browser renders it,
+ * streaming, from the model's tool-call arguments.
  * @module dsh-valuz-genui/tool
  */
 
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { GenericCallView, GenericResultView, ToolExecution, ToolResult } from '@deepseek-ai/dsh-tools'
+import type { GenericCallView, GenericResultView, ToolResult } from '@deepseek-ai/dsh-tools'
 import type { JsonValue } from '@deepseek-ai/dsh-session'
-import { GenerateUIError, TOOL_DESCRIPTION, generateUI } from '@valuz-genui/core'
-import { GENUI_META_KIND, isGenuiSurfaceMeta, type GenuiSurfaceMeta } from './meta.ts'
-import { resolveRoute, type ConfiguredRoute } from './route.ts'
-import { createDshStreamer } from './streamer.ts'
+import {
+  SUPPORTED_CATALOG_ID,
+  ensureSupportedCatalogId,
+  extractA2UIDocument,
+  inspectDocument,
+  serializeDocument,
+  type A2UIDocumentMessage,
+} from '@valuz-genui/core'
+import { sanitizeA2UIStream } from '@valuz-genui/a2ui/stream'
+import { valuzBaseComponentApis } from '@valuz-genui/a2ui/catalog'
+import { GENUI_META_KIND, type GenuiSurfaceMeta } from './meta.ts'
 
-/** Resolved generation bounds after config defaulting. */
-export interface GenuiToolConfig extends ConfiguredRoute {
-  maxOutputTokens: number
-  maxContinuations: number
-  maxAttempts: number
-  temperature?: number
-  maxDataBytes: number
-}
-
-/** Look up the document a prior call rendered for `surfaceId` in this session. */
-function documentForSurface(exec: ToolExecution, surfaceId: string): string | undefined {
-  const agent = exec.agent
-  if (agent === undefined) return undefined
-  let found: string | undefined
-  for (const event of agent.session.events) {
-    if (event.type !== 'tool/result') continue
-    const meta = (event.data as { meta?: unknown }).meta
-    if (isGenuiSurfaceMeta(meta) && meta.surfaceId === surfaceId) found = meta.document
-  }
-  return found
+/** Deployment bounds after config defaulting. */
+export interface RenderUiConfig {
+  /** Inclusive byte cap on the serialized document. */
+  maxDocumentBytes: number
 }
 
 /**
- * Register `generate_ui`.
- * @param ctx - context carrying the tool registry and LLM service.
- * @param config - resolved generation bounds and optional route override.
+ * Register `render_ui`.
+ * @param ctx - context carrying the tool registry.
+ * @param config - resolved bounds.
  */
-export function applyGenerateUiTool(ctx: Context, config: GenuiToolConfig): void {
+export function applyRenderUiTool(ctx: Context, config: RenderUiConfig): void {
   ctx.tools.register(defineTool({
-    name: 'generate_ui',
-    description: TOOL_DESCRIPTION,
+    name: 'render_ui',
+    description:
+      'Render an interactive UI you authored — charts, KPI cards, tables, forms, or a dashboard — '
+      + 'inline in the conversation. Pass `messages`: the array of A2UI v0.9.1 message objects '
+      + '(createSurface first, then updateComponents / updateDataModel), following the A2UI authoring '
+      + 'guide in your system prompt. The client renders them as you write the call. Returns text only '
+      + 'and writes no files; author the whole UI in one call and do not repeat it as text.',
     parameters: {
-      request: { type: 'string', required: true, description: 'Natural-language description of the UI: information hierarchy, data relationships, and interactions. No colors or CSS.' },
-      data: { type: 'json', description: 'A JSON object of the concrete values the UI should present.' },
-      component_names: { type: 'array', items: { type: 'string' }, description: 'Optional exact component set to restrict the compiler to; the structural root is added automatically.' },
-      edit_surface_id: { type: 'string', description: 'To edit an existing rendered surface, its id (the earlier call id). The current document is loaded and revised rather than rebuilt.' },
+      messages: {
+        type: 'array',
+        required: true,
+        items: { type: 'json' },
+        description: 'The A2UI message objects, in order. Element 0 is createSurface; one component must have id "root".',
+      },
+      title: { type: 'string', description: 'Optional short title for the surface.' },
     },
     output: {
       schema: {
@@ -60,98 +60,69 @@ export function applyGenerateUiTool(ctx: Context, config: GenuiToolConfig): void
           surfaceId: { type: 'string', required: true },
           componentNames: { type: 'array', required: true, items: { type: 'string' } },
           warningCount: { type: 'integer', required: true },
-          edited: { type: 'boolean', required: true },
           meta: { type: 'json', required: true },
         },
       },
-      // The model sees a short receipt; the client renders the document.
       render: (_args, value) => {
         const names = value.componentNames.join(', ')
-        const warned = value.warningCount > 0 ? ` (${value.warningCount} component(s) dropped)` : ''
-        const verb = value.edited ? 'Updated' : 'Rendered'
+        const warned = value.warningCount > 0 ? ` (${value.warningCount} component(s) dropped by validation)` : ''
         return [{
           type: 'text',
-          text: `${verb} an interactive UI (surface ${value.surfaceId}) with ${value.componentNames.length} component type(s): ${names}${warned}. It is shown to the user inline — do not repeat it as text.`,
+          text: `Rendered an interactive UI (surface ${value.surfaceId}) with ${value.componentNames.length} component type(s): ${names}${warned}. It is shown to the user inline — do not repeat it as text.`,
         }]
       },
-      // The full document + facts ride in meta: durable, replayed, unbounded,
-      // and never in the model-facing content that would spill.
+      // The document + facts ride in meta: durable, replayed, unbounded, and
+      // never in the model-facing content that would spill.
       presentationMeta: (_args, value): JsonValue => value.meta,
     },
-    isConcurrencySafe: () => false,
-    async execute(args, exec: ToolExecution) {
-      const request = args.request.trim()
-      if (request.length === 0) throw new Error('generate_ui: request must not be empty')
-      if (exec.agent === undefined) throw new Error('generate_ui: no calling agent')
-
-      if (args.data !== undefined) {
-        const bytes = Buffer.byteLength(JSON.stringify(args.data), 'utf8')
-        if (bytes > config.maxDataBytes) {
-          throw new Error(`generate_ui: data is ${bytes} bytes, over the ${config.maxDataBytes}-byte limit`)
+    isConcurrencySafe: () => true,
+    async execute(args, exec) {
+      const messages = args.messages as A2UIDocumentMessage[]
+      if (messages.length === 0) throw new Error('render_ui: messages must not be empty')
+      for (const [index, message] of messages.entries()) {
+        if (typeof message !== 'object' || message === null || Array.isArray(message)) {
+          throw new Error(`render_ui: messages[${index}] is not an A2UI message object`)
         }
       }
 
-      const editedSurfaceId = args.edit_surface_id?.trim()
-      let currentDocument: string | undefined
-      if (editedSurfaceId !== undefined && editedSurfaceId.length > 0) {
-        currentDocument = documentForSurface(exec, editedSurfaceId)
-        if (currentDocument === undefined) {
-          throw new Error(`generate_ui: no surface "${editedSurfaceId}" was found in this session to edit`)
-        }
+      const serialized = serializeDocument(messages)
+      const bytes = Buffer.byteLength(serialized, 'utf8')
+      if (bytes > config.maxDocumentBytes) {
+        throw new Error(`render_ui: document is ${bytes} bytes, over the ${config.maxDocumentBytes}-byte limit`)
       }
 
-      const route = resolveRoute(exec.agent, config)
-      const streamer = createDshStreamer(ctx, { route, sessionId: exec.agent.session.id, plugin: 'dsh-valuz-genui' })
-      const componentNames = args.component_names?.filter((name) => name.length > 0)
-
-      let result
-      try {
-        result = await generateUI({
-          streamer,
-          request,
-          data: args.data,
-          ...(componentNames !== undefined && componentNames.length > 0 ? { componentNames } : {}),
-          ...(currentDocument !== undefined ? { currentDocument } : {}),
-          maxOutputTokens: config.maxOutputTokens,
-          maxContinuations: config.maxContinuations,
-          maxAttempts: config.maxAttempts,
-          ...(config.temperature === undefined ? {} : { temperature: config.temperature }),
-          ...(exec.signal === undefined ? {} : { abortSignal: exec.signal }),
-        })
-      } catch (error: unknown) {
-        if (error instanceof GenerateUIError) throw new Error(error.message)
-        throw error
+      const document = ensureSupportedCatalogId(extractA2UIDocument(serialized), SUPPORTED_CATALOG_ID)
+      const inspection = inspectDocument(document, valuzBaseComponentApis)
+      if (document === null || !inspection.ok) {
+        throw new Error(`render_ui: ${inspection.error ?? 'the messages do not form a renderable A2UI document'}`)
       }
+      // Recompute warnings on the canonical document (dropped components render fine as siblings).
+      const { rejected } = sanitizeA2UIStream(document, valuzBaseComponentApis)
 
       const surfaceId = String(exec.callId)
+      const title = args.title?.trim()
       const meta: GenuiSurfaceMeta = {
         kind: GENUI_META_KIND,
         surfaceId,
-        document: result.document,
-        request,
-        componentNames: result.componentNames,
-        warnings: result.warnings,
-        attempts: result.attempts,
-        continuations: result.continuations,
-        route,
-        usage: result.usage,
-        ...(editedSurfaceId !== undefined && editedSurfaceId.length > 0 ? { editedSurfaceId } : {}),
+        document,
+        componentNames: inspection.componentNames,
+        warnings: rejected,
+        ...(title !== undefined && title.length > 0 ? { title } : {}),
       }
       return {
         surfaceId,
-        componentNames: result.componentNames,
-        warningCount: result.warnings.length,
-        edited: currentDocument !== undefined,
+        componentNames: inspection.componentNames,
+        warningCount: rejected.length,
         meta: meta as unknown as JsonValue,
       }
     },
     presentCall(args): GenericCallView {
-      const editing = args.edit_surface_id !== undefined && args.edit_surface_id.length > 0
+      const count = Array.isArray(args.messages) ? args.messages.length : 0
       return {
         card: 'generic',
-        title: editing ? 'Updating interactive UI' : 'Generating interactive UI',
-        kind: 'search',
-        content: [{ type: 'text', text: args.request }],
+        title: args.title !== undefined && args.title.length > 0 ? `Rendering ${args.title}` : 'Rendering interactive UI',
+
+        content: [{ type: 'text', text: `${count} A2UI message(s)` }],
       }
     },
     presentResult(_args, result: ToolResult): GenericResultView | undefined {

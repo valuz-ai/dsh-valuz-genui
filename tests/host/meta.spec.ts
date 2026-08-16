@@ -5,12 +5,9 @@ const META: GenuiSurfaceMeta = {
   kind: 'genui-surface',
   surfaceId: 'call-1',
   document: '{}',
-  request: 'r',
+  title: 't',
   componentNames: ['Stack'],
   warnings: [],
-  attempts: 1,
-  continuations: 0,
-  route: { provider: 'p', model: 'm' },
 }
 
 describe('meta', () => {

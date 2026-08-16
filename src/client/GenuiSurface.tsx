@@ -64,7 +64,7 @@ export function GenuiSurface(props: GenuiSurfaceProps): ReactNode {
   return (
     <div className={css.root} data-genui-surface={data.surfaceId}>
       <SurfaceErrorBoundary>
-        <A2UIRenderer body={data.document} status="success" theme={theme} onAction={onAction} />
+        <A2UIRenderer body={data.document} status={data.status} theme={theme} onAction={onAction} />
       </SurfaceErrorBoundary>
       {data.warningCount > 0
         ? <div className={css.warning}>{data.warningCount} component(s) were dropped by validation.</div>

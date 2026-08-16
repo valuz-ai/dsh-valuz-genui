@@ -1,23 +1,45 @@
 /**
- * The system-prompt guidance that teaches the model when to call `generate_ui`
- * and how to react to a `<ui_action>` message. Independent of the skill so it
- * works with zero skill catalog (a lesson from prior genui plugins).
+ * The system-prompt section that teaches the MAIN model to author A2UI itself
+ * and emit it by calling `render_ui`. Because the model writes the document
+ * directly (no nested model call), the full A2UI authoring guide — base rules,
+ * the message contract, and the component catalog — lives here, always on.
  * @module dsh-valuz-genui/prompt-section
  */
 
+import {
+  A2UI_VERSION,
+  SUPPORTED_CATALOG_ID,
+  buildCatalogBlock,
+  buildInstructions,
+} from '@valuz-genui/core'
+import { valuzBaseComponentApis, type ComponentApi } from '@valuz-genui/a2ui/catalog'
+
 /** Section name; tool guidance lives in the 100–199 order band. */
-export const GENUI_SECTION_NAME = 'genui:tool'
+export const GENUI_SECTION_NAME = 'genui:authoring'
 export const GENUI_SECTION_ORDER = 110
 
-export const GENUI_SECTION_TEXT =
-  'You can render interactive UI with the generate_ui tool: a natural-language '
-  + 'request plus the data to show become charts, KPI cards, tables, forms, or a '
-  + 'small dashboard shown inline in this conversation. Call it when the user asks '
-  + 'for a chart, dashboard, card, visualization, page, or interactive control — '
-  + 'not to merely list items, and never inferring the intent from data alone. Put '
-  + 'the concrete values in the data argument; describe layout and relationships in '
-  + 'words, never colors or CSS (the host owns the theme). Do not restate the UI as '
-  + 'text after calling it. When the user interacts with a surface you rendered, you '
-  + 'receive a message like <ui_action surface="…" component="…" name="…">{…}</ui_action>: '
-  + 'answer in text if that suffices, or call generate_ui again with current_document '
-  + 'set to that surface to return an updated interface.'
+/** How the model must deliver the document it authored. */
+const DELIVERY = `Deliver the UI by calling the render_ui tool: pass \`messages\` as the array of A2UI message objects you wrote (one object per array element — do NOT stringify them, and do NOT wrap them in text). The client renders them, streaming, as you write the call. Author the whole document in one render_ui call; do not narrate the JSON or repeat the UI as text afterward. When the user interacts with a surface you rendered, you receive a <ui_action surface="…" component="…" name="…">{…}</ui_action> message: answer in text if that suffices, or call render_ui again with the full updated document to change the interface.`
+
+/**
+ * Build the authoring guide.
+ * @param catalog - the component catalog to teach; defaults to the base catalog.
+ * @returns the full system-prompt section text.
+ */
+export function buildAuthoringGuide(catalog: readonly ComponentApi[] = valuzBaseComponentApis): string {
+  return [
+    'When the user asks for a chart, dashboard, KPI cards, a table, a form, or an interactive UI, render it with the render_ui tool. Describe layout and relationships through the components below; never hand-write colors or CSS (the host owns the theme). Put concrete values directly in the components.',
+    '',
+    buildInstructions(),
+    '',
+    `A2UI ${A2UI_VERSION} message contract — each element of render_ui \`messages\` is one of:`,
+    `- createSurface: {"version":"${A2UI_VERSION}","createSurface":{"surfaceId":"main","catalogId":"${SUPPORTED_CATALOG_ID}"}}  (must be the first element)`,
+    `- updateComponents: {"version":"${A2UI_VERSION}","updateComponents":{"surfaceId":"main","components":[...]}}`,
+    `- updateDataModel: {"version":"${A2UI_VERSION}","updateDataModel":{"surfaceId":"main","path":"/","value":{...}}}`,
+    '- exactly one component must have id "root"; put the visible tree under root.children.',
+    '',
+    buildCatalogBlock(catalog).trim(),
+    '',
+    DELIVERY,
+  ].join('\n')
+}
