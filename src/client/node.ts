@@ -1,9 +1,9 @@
 /**
- * The Conversation Node that renders a `render_ui` surface inline — streaming
+ * The Conversation Node that renders a `generate_ui` surface inline — streaming
  * as the model writes the call, then authoritative once the tool settles.
  *
  * It keys by step (`turn:step`, the stable identity), starts on `step/start`,
- * folds `assistant/chunk` `tool-call-delta` for the render_ui block into the
+ * folds `assistant/chunk` `tool-call-delta` for the generate_ui block into the
  * live document, and adopts the durable `tool/result.meta` document at settle
  * (which is also the replay source).
  * @module dsh-valuz-genui/client/node
@@ -18,7 +18,7 @@ import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { isGenuiSurfaceMeta } from '../meta.ts'
 import { extractCompleteArrayElements } from './partial-args.ts'
 
-const RENDER_UI_TOOL = 'render_ui'
+const GENERATE_UI_TOOL = 'generate_ui'
 
 /** Renderer payload for one surface. */
 export interface GenuiSurfaceChatData {
@@ -33,7 +33,7 @@ export interface GenuiSurfaceChatData {
 
 declare module '@deepseek-ai/dsh-client-ui-conversation/client' {
   interface ChatNodeDataMap {
-    /** One render_ui surface rendered inline. */
+    /** One generate_ui surface rendered inline. */
     'genui-surface': GenuiSurfaceChatData
   }
 }
@@ -47,11 +47,11 @@ interface SettledSurface {
 }
 
 interface GenuiNodeState {
-  /** Block index of the render_ui tool call in this step, once seen. */
+  /** Block index of the generate_ui tool call in this step, once seen. */
   renderIndex: number | null
-  /** The render_ui call id (surface id), once seen. */
+  /** The generate_ui call id (surface id), once seen. */
   surfaceId: string | null
-  /** Accumulated tool-call arguments for the render_ui block. */
+  /** Accumulated tool-call arguments for the generate_ui block. */
   argsRaw: string
   /** Authoritative surface, once the tool settled. */
   settled: SettledSurface | null
@@ -62,7 +62,7 @@ function foldChunk(state: GenuiNodeState, event: SessionEvent): GenuiNodeState {
     const chunk = event.data.chunk
     if (chunk.type !== 'tool-call-delta') return state
     let { renderIndex, surfaceId } = state
-    if (chunk.name === RENDER_UI_TOOL) {
+    if (chunk.name === GENERATE_UI_TOOL) {
       renderIndex = chunk.index
       surfaceId = String(chunk.id)
     }
@@ -99,7 +99,7 @@ function streamingDocument(argsRaw: string): string {
   return elements.map((element) => JSON.stringify(element)).join('\n')
 }
 
-/** The render_ui surface node. */
+/** The generate_ui surface node. */
 export const genuiSurfaceDefinition: ConversationNodeDefinition<GenuiNodeState> = {
   kind: 'genui-surface',
   target: 'chat',

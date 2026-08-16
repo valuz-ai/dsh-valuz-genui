@@ -1,15 +1,15 @@
 # dsh-valuz-genui
 
-A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin that gives the model a `render_ui` tool: the **model itself authors** an [A2UI](https://a2ui.org) v0.9.1 document and passes it to `render_ui`, and the browser renders it as an **interactive surface inline in the chat** — charts, KPI cards, tables, forms, dashboards — **streaming as the model writes the call**, and whose interactions come back to the model.
+A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin that gives the model a `generate_ui` tool: the **model itself authors** an [A2UI](https://a2ui.org) v0.9.1 document and passes it to `generate_ui`, and the browser renders it as an **interactive surface inline in the chat** — charts, KPI cards, tables, forms, dashboards — **streaming as the model writes the call**, and whose interactions come back to the model.
 
 There is **no nested model call**: the UI is the model's own streamed output, so it appears live (like a fenced block), costs one model turn, and can't fail with a mid-stream error from a second request. It builds on the provider-agnostic [valuz-genui](https://github.com/valuz-ai/valuz-genui) core (76-component A2UI catalog, streaming sanitizer, React renderer).
 
 ## How it works
 
-- **Authoring guide (system prompt).** The plugin teaches the model the A2UI component catalog and message contract in a system-prompt section, and tells it to deliver the UI by calling `render_ui` with `messages` (the array of A2UI message objects it wrote).
-- **Streaming render.** As the model writes the `render_ui` arguments, each `tool-call-delta` reaches the browser as an `assistant/chunk` *before the tool runs*. A conversation node folds those deltas, extracts the complete A2UI messages authored so far, and renders them with the valuz `<A2UIRenderer>` — which keeps the last good surface while the tail is still being written. So the surface builds up component by component, live.
-- **Settle + replay.** When `render_ui` executes (milliseconds — it only validates and never calls a model), it persists the canonical document to `tool/result.meta`. The node adopts that authoritative document, and the same meta re-renders the surface on reload/replay.
-- **Interactions.** A click/submit on a rendered surface is sent back to the model as an ordinary user message: `<ui_action surface="…" component="…" name="…">{context}</ui_action>` (model-visible ⟺ logged). The model answers in text or calls `render_ui` again with the updated document.
+- **Authoring guide (system prompt).** The plugin teaches the model the A2UI component catalog and message contract in a system-prompt section, and tells it to deliver the UI by calling `generate_ui` with `messages` (the array of A2UI message objects it wrote).
+- **Streaming render.** As the model writes the `generate_ui` arguments, each `tool-call-delta` reaches the browser as an `assistant/chunk` *before the tool runs*. A conversation node folds those deltas, extracts the complete A2UI messages authored so far, and renders them with the valuz `<A2UIRenderer>` — which keeps the last good surface while the tail is still being written. So the surface builds up component by component, live.
+- **Settle + replay.** When `generate_ui` executes (milliseconds — it only validates and never calls a model), it persists the canonical document to `tool/result.meta`. The node adopts that authoritative document, and the same meta re-renders the surface on reload/replay.
+- **Interactions.** A click/submit on a rendered surface is sent back to the model as an ordinary user message: `<ui_action surface="…" component="…" name="…">{context}</ui_action>` (model-visible ⟺ logged). The model answers in text or calls `generate_ui` again with the updated document.
 
 ## Install
 
@@ -44,7 +44,7 @@ Restart `dsh web` and hard-refresh after each rebuild.
 
 ## The tool
 
-`render_ui(messages, title?)`
+`generate_ui(messages, title?)`
 
 - `messages` — the array of A2UI v0.9.1 message objects the model authored: `createSurface` first, then `updateComponents` / `updateDataModel`; exactly one component has id `"root"`. Written as native JSON (not a stringified blob), so it streams and validates cleanly.
 - `title` — optional short surface title.

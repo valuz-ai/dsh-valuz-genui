@@ -1,6 +1,6 @@
 /**
  * The durable contract shared by the host tool and the browser node: the
- * `tool/result.meta` payload one `render_ui` call persists, and the
+ * `tool/result.meta` payload one `generate_ui` call persists, and the
  * `<ui_action>` envelope a user interaction sends back to the agent.
  * Pure types and functions; imported by both halves.
  * @module dsh-valuz-genui/meta

@@ -1,5 +1,5 @@
 /**
- * The `render_ui` tool. The MAIN model authors the A2UI document and passes it
+ * The `generate_ui` tool. The MAIN model authors the A2UI document and passes it
  * as `messages` (an array of A2UI message objects). The tool does NO model
  * call: it serializes, validates, and persists the document to `tool/result.meta`
  * (durable, replayed) and returns a short receipt. The browser renders it,
@@ -24,25 +24,25 @@ import { valuzBaseComponentApis } from '@valuz-genui/a2ui/catalog'
 import { GENUI_META_KIND, type GenuiSurfaceMeta } from './meta.ts'
 
 /** Deployment bounds after config defaulting. */
-export interface RenderUiConfig {
+export interface GenerateUiConfig {
   /** Inclusive byte cap on the serialized document. */
   maxDocumentBytes: number
 }
 
 /**
- * Register `render_ui`.
+ * Register `generate_ui`.
  * @param ctx - context carrying the tool registry.
  * @param config - resolved bounds.
  */
-export function applyRenderUiTool(ctx: Context, config: RenderUiConfig): void {
+export function applyGenerateUiTool(ctx: Context, config: GenerateUiConfig): void {
   ctx.tools.register(defineTool({
-    name: 'render_ui',
+    name: 'generate_ui',
     description:
-      'Render an interactive UI you authored — charts, KPI cards, tables, forms, or a dashboard — '
-      + 'inline in the conversation. Pass `messages`: the array of A2UI v0.9.1 message objects '
+      'Generate an interactive UI — charts, KPI cards, tables, forms, or a dashboard — shown inline '
+      + 'in the conversation. Author the A2UI v0.9.1 messages yourself and pass them as `messages` '
       + '(createSurface first, then updateComponents / updateDataModel), following the A2UI authoring '
-      + 'guide in your system prompt. The client renders them as you write the call. Returns text only '
-      + 'and writes no files; author the whole UI in one call and do not repeat it as text.',
+      + 'guide in your system prompt. The client renders them as you write the call, streaming. Returns '
+      + 'text only and writes no files; author the whole UI in one call and do not repeat it as text.',
     parameters: {
       messages: {
         type: 'array',
@@ -78,23 +78,23 @@ export function applyRenderUiTool(ctx: Context, config: RenderUiConfig): void {
     isConcurrencySafe: () => true,
     async execute(args, exec) {
       const messages = args.messages as A2UIDocumentMessage[]
-      if (messages.length === 0) throw new Error('render_ui: messages must not be empty')
+      if (messages.length === 0) throw new Error('generate_ui: messages must not be empty')
       for (const [index, message] of messages.entries()) {
         if (typeof message !== 'object' || message === null || Array.isArray(message)) {
-          throw new Error(`render_ui: messages[${index}] is not an A2UI message object`)
+          throw new Error(`generate_ui: messages[${index}] is not an A2UI message object`)
         }
       }
 
       const serialized = serializeDocument(messages)
       const bytes = Buffer.byteLength(serialized, 'utf8')
       if (bytes > config.maxDocumentBytes) {
-        throw new Error(`render_ui: document is ${bytes} bytes, over the ${config.maxDocumentBytes}-byte limit`)
+        throw new Error(`generate_ui: document is ${bytes} bytes, over the ${config.maxDocumentBytes}-byte limit`)
       }
 
       const document = ensureSupportedCatalogId(extractA2UIDocument(serialized), SUPPORTED_CATALOG_ID)
       const inspection = inspectDocument(document, valuzBaseComponentApis)
       if (document === null || !inspection.ok) {
-        throw new Error(`render_ui: ${inspection.error ?? 'the messages do not form a renderable A2UI document'}`)
+        throw new Error(`generate_ui: ${inspection.error ?? 'the messages do not form a renderable A2UI document'}`)
       }
       // Recompute warnings on the canonical document (dropped components render fine as siblings).
       const { rejected } = sanitizeA2UIStream(document, valuzBaseComponentApis)

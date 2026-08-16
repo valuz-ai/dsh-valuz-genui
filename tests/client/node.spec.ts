@@ -28,14 +28,14 @@ describe('genuiSurfaceDefinition', () => {
     expect(genuiSurfaceDefinition.match({ type: 'user/message', data: {} } as never)).toBeNull()
   })
 
-  it('renders nothing for a step without a render_ui call', () => {
+  it('renders nothing for a step without a generate_ui call', () => {
     expect(fold([stepStart, chunk(2, { type: 'text-delta', index: 0, text: 'hi' })])).toBeNull()
   })
 
-  it('streams the partial document from render_ui tool-call-delta', () => {
+  it('streams the partial document from generate_ui tool-call-delta', () => {
     const data = fold([
       stepStart,
-      chunk(2, { type: 'tool-call-delta', index: 0, id: 'call-9', name: 'render_ui', argumentsDelta: '{"messages":[{"a":1},' }),
+      chunk(2, { type: 'tool-call-delta', index: 0, id: 'call-9', name: 'generate_ui', argumentsDelta: '{"messages":[{"a":1},' }),
       chunk(3, { type: 'tool-call-delta', index: 0, id: 'call-9', argumentsDelta: '{"b":2},{"c":' }),
     ])
     expect(data).toEqual({ surfaceId: 'call-9', document: '{"a":1}\n{"b":2}', status: 'running', componentNames: [], warningCount: 0 })
@@ -52,7 +52,7 @@ describe('genuiSurfaceDefinition', () => {
   it('adopts the authoritative document and facts once the tool settles', () => {
     const data = fold([
       stepStart,
-      chunk(2, { type: 'tool-call-delta', index: 0, id: 'call-9', name: 'render_ui', argumentsDelta: '{"messages":[{"a":1}' }),
+      chunk(2, { type: 'tool-call-delta', index: 0, id: 'call-9', name: 'generate_ui', argumentsDelta: '{"messages":[{"a":1}' }),
       toolResult,
     ])
     expect(data).toEqual({ surfaceId: 'call-9', document: '{"a":1}\n{"b":2}', status: 'success', title: 'Dash', componentNames: ['Stack', 'Metric'], warningCount: 1 })

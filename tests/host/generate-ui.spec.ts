@@ -1,6 +1,6 @@
 /**
  * Real-composition host test: a real Cordis Context with the tool registry and
- * system-prompt registry. render_ui does no model call — it validates the
+ * system-prompt registry. generate_ui does no model call — it validates the
  * messages the model authored and persists the document to tool/result.meta.
  */
 import { afterEach, describe, expect, it } from 'vitest'
@@ -33,7 +33,7 @@ function run(ctx: Context, args: unknown) {
   return ctx.tools.execute({
     signal: new AbortController().signal,
     callId: CallId(`call-${++calls}`),
-    name: 'render_ui',
+    name: 'generate_ui',
     arguments: args,
   })
 }
@@ -41,13 +41,13 @@ function run(ctx: Context, args: unknown) {
 const text = (result: { content: { type: string; text?: string }[] }) =>
   result.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
 
-describe('render_ui', () => {
+describe('generate_ui', () => {
   it('registers the tool and teaches A2UI in the system prompt (no LLM inject)', async () => {
     const { ctx } = await mount()
-    expect(ctx.tools.schemas().map((s) => s.name)).toContain('render_ui')
+    expect(ctx.tools.schemas().map((s) => s.name)).toContain('generate_ui')
     expect(Genui.inject).not.toContain('llm')
     const assembly = JSON.stringify(await ctx.systemPrompt.assemble())
-    expect(assembly).toContain('render_ui')
+    expect(assembly).toContain('generate_ui')
     expect(assembly).toContain('A2UI component catalog')
   })
 
@@ -82,7 +82,7 @@ describe('render_ui', () => {
   it('rejects messages that do not form a renderable document', async () => {
     const { ctx } = await mount()
     expect((await run(ctx, { messages: [] })).isError).toBe(true)
-    expect(text(await run(ctx, { messages: [TITLE] }))).toContain('render_ui')
+    expect(text(await run(ctx, { messages: [TITLE] }))).toContain('generate_ui')
     expect(text(await run(ctx, { messages: ['not an object'] }))).toContain('not an A2UI message object')
   })
 
@@ -104,8 +104,8 @@ describe('render_ui', () => {
 
   it('unregisters on dispose (HMR safety)', async () => {
     const { ctx, fiber } = await mount()
-    expect(ctx.tools.get('render_ui')).toBeDefined()
+    expect(ctx.tools.get('generate_ui')).toBeDefined()
     await fiber.dispose()
-    expect(ctx.tools.get('render_ui')).toBeUndefined()
+    expect(ctx.tools.get('generate_ui')).toBeUndefined()
   })
 })
