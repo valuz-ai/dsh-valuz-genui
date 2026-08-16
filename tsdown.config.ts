@@ -13,7 +13,7 @@
 import { readFile } from 'node:fs/promises'
 import { basename } from 'node:path'
 import { defineConfig, type UserConfig } from 'tsdown'
-import { transform } from 'lightningcss'
+import { bundle, transform } from 'lightningcss'
 import { VALUZ_ALIASES } from './aliases.ts'
 
 const PLUGIN_ID = 'dsh-valuz-genui'
@@ -57,13 +57,12 @@ const cssPlugin = {
     if (!id.startsWith(CSS_VIRTUAL_PREFIX)) return null
     const file = id.slice(CSS_VIRTUAL_PREFIX.length, -CSS_VIRTUAL_SUFFIX.length)
     const isModule = file.endsWith('.module.css')
-    const source = await readFile(file)
-    const { code, exports: cssExports } = transform({
-      filename: file,
-      code: source,
-      cssModules: isModule ? { pattern: '[hash]_[local]' } : false,
-      minify: true,
-    })
+    // Plain CSS may `@import` sibling files (the A2UI styles.css pulls in the
+    // theme tokens and per-component sheets); bundle() inlines them from disk.
+    // CSS Modules stay a single-file transform so the hashed class map is exact.
+    const { code, exports: cssExports } = isModule
+      ? transform({ filename: file, code: await readFile(file), cssModules: { pattern: '[hash]_[local]' }, minify: true })
+      : bundle({ filename: file, minify: true })
     const classMap: Record<string, string> = {}
     for (const [local, exp] of Object.entries(cssExports ?? {})) classMap[local] = exp.name
     return [
