@@ -56,7 +56,7 @@ The tool validates the document, pins the catalog id, drops schema-invalid compo
 
 ## Configuration
 
-Override the `genui` row by id in your profile's `cordis.patch.yml`:
+Override the `valuz-genui` row by id in your profile's `cordis.patch.yml`:
 
 | Key | Default | Meaning |
 |---|---|---|
