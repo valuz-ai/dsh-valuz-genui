@@ -6,7 +6,7 @@ There is **no nested model call**: the UI is the model's own streamed output, so
 
 ## How it works
 
-- **Authoring guide (system prompt).** The plugin teaches the model the A2UI component catalog and message contract in a system-prompt section, and tells it to deliver the UI by calling `generate_ui` with `messages` (the array of A2UI message objects it wrote).
+- **Authoring guide (system prompt + skill).** The plugin teaches the model to author A2UI and deliver it by calling `generate_ui` with `messages` (the array of A2UI message objects). When the host supports skills, a compact guide (component names + purposes + message contract) is always on and the full field-signature catalog loads on demand via the `genui` skill; otherwise the full guide stays in the system prompt.
 - **Streaming render.** As the model writes the `generate_ui` arguments, each `tool-call-delta` reaches the browser as an `assistant/chunk` *before the tool runs*. A conversation node folds those deltas, extracts the complete A2UI messages authored so far, and renders them with the valuz `<A2UIRenderer>` — which keeps the last good surface while the tail is still being written. So the surface builds up component by component, live.
 - **Settle + replay.** When `generate_ui` executes (milliseconds — it only validates and never calls a model), it persists the canonical document to `tool/result.meta`. The node adopts that authoritative document, and the same meta re-renders the surface on reload/replay.
 - **Interactions.** A click/submit on a rendered surface is sent back to the model as an ordinary user message: `<ui_action surface="…" component="…" name="…">{context}</ui_action>` (model-visible ⟺ logged). The model answers in text or calls `generate_ui` again with the updated document.
@@ -58,10 +58,11 @@ Override the `genui` row by id in your profile's `cordis.patch.yml`:
 | Key | Default | Meaning |
 |---|---|---|
 | `maxDocumentBytes` | 262144 | Inclusive byte cap on the serialized A2UI document. |
+| `alwaysOnFullGuide` | false | Keep the full field-signature catalog in the system prompt instead of the on-demand `genui` skill. |
 
 ## Known Limitations and Deferred Work
 
-- **Always-on prompt cost (~8.6k tokens).** The full A2UI authoring guide (catalog + rules) lives in the system prompt on every request in a session, because the model authors A2UI directly. It is a stable prefix (KV-cache-friendly) but still a real context cost. Phase 2 will move the full catalog into an on-demand skill and keep only a short teaser always on.
+- **Always-on prompt cost.** Where the host supports skills (`ctx.skills`, e.g. the web profile), only a compact guide (~3.1k tokens: component names + one-line purposes + the message contract) stays always on, and the full field-signature catalog (~9k tokens) loads on demand through the `genui` skill. Where no skill capability exists (or `alwaysOnFullGuide: true`), the full guide stays in the system prompt. Both are stable prefixes (KV-cache-friendly). The model is told to load the `genui` skill before authoring; guessing fields drops components.
 - **Authoring quality depends on the model.** A2UI's 76-component graph is richer — and harder to author inline — than a compact DSL. Complex dashboards may need prompt tuning; the sanitizer tolerates and drops malformed components rather than failing the whole surface.
 - **Client bundle is large (~3.5 MB).** recharts, the A2UI renderer, and markdown-it are inlined. Phase 2 splits the chart engine into a lazily loaded plugin-served asset.
 - **Theme bridge is coarse.** The renderer follows light/dark but does not yet map A2UI `--va2-*` tokens onto the host `--dsw-alias-*` scale.

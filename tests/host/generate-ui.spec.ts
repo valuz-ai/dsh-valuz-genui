@@ -8,6 +8,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { CallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import SkillRuntime from '@deepseek-ai/dsh-skill'
 import { SUPPORTED_CATALOG_ID } from '@valuz-genui/core'
 import * as Genui from '../../src/index.ts'
 import { isGenuiSurfaceMeta } from '../../src/meta.ts'
@@ -19,11 +20,12 @@ const TITLE = { version: 'v0.9.1', updateComponents: { surfaceId: 'main', compon
 const contexts: Context[] = []
 afterEach(async () => { await Promise.all(contexts.splice(0).map((ctx) => ctx.fiber.dispose())) })
 
-async function mount(config?: Genui.Config) {
+async function mount(config?: Genui.Config, withSkills = false) {
   const ctx = new Context()
   contexts.push(ctx)
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
+  if (withSkills) await ctx.plugin(SkillRuntime)
   const fiber = await ctx.plugin(Genui, config)
   return { ctx, fiber }
 }
@@ -48,7 +50,32 @@ describe('generate_ui', () => {
     expect(Genui.inject).not.toContain('llm')
     const assembly = JSON.stringify(await ctx.systemPrompt.assemble())
     expect(assembly).toContain('generate_ui')
+  })
+
+  it('without a skill capability, keeps the FULL field-signature catalog in the prompt', async () => {
+    const { ctx } = await mount()
+    const assembly = JSON.stringify(await ctx.systemPrompt.assemble())
+    // The full catalog renders field signatures like `TextContent(text: ...)`.
     expect(assembly).toContain('A2UI component catalog')
+    expect(assembly).toMatch(/TextContent\(/)
+  })
+
+  it('with a skill capability, uses the COMPACT section and registers the genui skill', async () => {
+    const { ctx } = await mount(undefined, true)
+    const assembly = JSON.stringify(await ctx.systemPrompt.assemble())
+    // Compact section: names + purposes, no field signatures, and it points at the skill.
+    expect(assembly).toContain('load the genui skill')
+    expect(assembly).not.toMatch(/TextContent\(/)
+    const skills = await ctx.skills.list()
+    expect(skills.map((skill) => skill.name)).toContain('genui')
+  })
+
+  it('alwaysOnFullGuide keeps the full section even when skills exist, and registers no skill', async () => {
+    const { ctx } = await mount({ alwaysOnFullGuide: true }, true)
+    const assembly = JSON.stringify(await ctx.systemPrompt.assemble())
+    expect(assembly).toMatch(/TextContent\(/)
+    const skills = await ctx.skills.list()
+    expect(skills.map((skill) => skill.name)).not.toContain('genui')
   })
 
   it('validates the authored messages and persists the document in meta', async () => {

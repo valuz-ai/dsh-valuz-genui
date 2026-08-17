@@ -64,7 +64,8 @@
     "@deepseek-ai/dsh-client-ui-conversation": ">=0.1.0-rc.5",
     "@deepseek-ai/dsh-client-ui-slots": ">=0.1.0-rc.5",
     "@deepseek-ai/dsh-client-ui-theme": ">=0.1.0-rc.5",
-    "react": "^18.2.0 || ^19.0.0"
+    "react": "^18.2.0 || ^19.0.0",
+    "@deepseek-ai/dsh-skill": ">=0.1.0-rc.5"
   },
   "dependencies": {
     "@a2ui/web_core": "^0.10.6",
@@ -100,6 +101,7 @@
     "recharts": "3.8.0",
     "tsdown": "^0.22.2",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@deepseek-ai/dsh-skill": "0.1.0-rc.6"
   }
 }
