@@ -3,7 +3,7 @@
  * and emit it by calling `generate_ui`. Because the model writes the document
  * directly (no nested model call), the full A2UI authoring guide — base rules,
  * the message contract, and the component catalog — lives here, always on.
- * @module dsh-valuz-genui/prompt-section
+ * @module @valuz/dsh-valuz-genui/prompt-section
  */
 
 import {

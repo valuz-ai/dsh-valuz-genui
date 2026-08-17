@@ -1,8 +1,8 @@
 /**
- * Browser half of dsh-valuz-genui: register the generate_ui surface
+ * Browser half of @valuz/dsh-valuz-genui: register the generate_ui surface
  * Conversation Node and its keyed Chat renderer, and wire the host theme +
  * the action → agent bridge into the renderer.
- * @module dsh-valuz-genui/client
+ * @module @valuz/dsh-valuz-genui/client
  */
 
 import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client'

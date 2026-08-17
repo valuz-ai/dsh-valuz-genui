@@ -8,7 +8,7 @@
  * section (component names + purposes + rules), plus the full field-signature
  * catalog in an on-demand `genui` skill when the host has skill support. Where
  * no skill capability exists, the full guide stays in the section.
- * @module dsh-valuz-genui
+ * @module @valuz/dsh-valuz-genui
  */
 
 import type { Context } from '@deepseek-ai/cordis'

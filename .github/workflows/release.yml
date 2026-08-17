@@ -1,0 +1,30 @@
+name: Release
+
+# Publishes @valuz/dsh-valuz-genui to npm. Trigger by publishing a GitHub Release
+# (or run manually). Requires an NPM_TOKEN repo secret with publish rights to
+# the @valuz scope.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # npm provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4   # version comes from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # typecheck + tests + build (lib/ is what ships; files: ["lib", "cordis.patch.yml"])
+      - run: pnpm run check
+      - run: pnpm publish --access public --no-git-checks --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

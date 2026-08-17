@@ -3,7 +3,7 @@
  * `tool/result.meta` payload one `generate_ui` call persists, and the
  * `<ui_action>` envelope a user interaction sends back to the agent.
  * Pure types and functions; imported by both halves.
- * @module dsh-valuz-genui/meta
+ * @module @valuz/dsh-valuz-genui/meta
  */
 
 /** Discriminator on `tool/result.meta` for surfaces this plugin rendered. */

@@ -4,10 +4,10 @@
 # cordis.patch.yml to pin a model or change bounds:
 #
 #   - id: genui
-#     name: dsh-valuz-genui
+#     name: @valuz/dsh-valuz-genui
 #     config:
 #       provider: deepseek-official
 #       model: deepseek-v4-flash
 - insert:
     - id: genui
-      name: dsh-valuz-genui
+      name: @valuz/dsh-valuz-genui

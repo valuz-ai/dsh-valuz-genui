@@ -4,7 +4,7 @@
  * call: it serializes, validates, and persists the document to `tool/result.meta`
  * (durable, replayed) and returns a short receipt. The browser renders it,
  * streaming, from the model's tool-call arguments.
- * @module dsh-valuz-genui/tool
+ * @module @valuz/dsh-valuz-genui/tool
  */
 
 import type { Context } from '@deepseek-ai/cordis'

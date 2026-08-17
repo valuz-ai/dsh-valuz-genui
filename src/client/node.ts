@@ -6,7 +6,7 @@
  * folds `assistant/chunk` `tool-call-delta` for the generate_ui block into the
  * live document, and adopts the durable `tool/result.meta` document at settle
  * (which is also the replay source).
- * @module dsh-valuz-genui/client/node
+ * @module @valuz/dsh-valuz-genui/client/node
  */
 
 import type {

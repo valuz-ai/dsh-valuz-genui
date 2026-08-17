@@ -10,21 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          repository: valuz-ai/valuz-genui
-          path: valuz-genui
-      - uses: actions/checkout@v4
-        with:
-          path: dsh-valuz-genui
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - uses: pnpm/action-setup@v4   # version comes from package.json "packageManager"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: dsh-valuz-genui/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-        working-directory: dsh-valuz-genui
       - run: pnpm run check
-        working-directory: dsh-valuz-genui

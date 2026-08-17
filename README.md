@@ -16,17 +16,21 @@ There is **no nested model call**: the UI is the model's own streamed output, so
 Into an existing profile that already has a model configured:
 
 ```sh
+dsh plugin --profile web add @valuz/dsh-valuz-genui
+```
+
+The npm package ships a prebuilt `lib/`, so no build step or `allowBuilds` entry is needed. To pin an unreleased commit instead, install from git — pnpm ≥ 10 then blocks the git dependency's `prepare` build until you allow it; the first `add` fails and prints the exact key to copy into the profile's `pnpm-workspace.yaml`:
+
+```sh
 dsh plugin --profile web add github:valuz-ai/dsh-valuz-genui#<commit-sha>
 ```
 
-pnpm ≥ 10 blocks a git dependency's `prepare` build until you allow it; the first `add` fails and prints the exact key to copy into the profile's `pnpm-workspace.yaml`:
-
 ```yaml
 allowBuilds:
-  'dsh-valuz-genui@https://codeload.github.com/valuz-ai/dsh-valuz-genui/tar.gz/<commit-sha>': true
+  '@valuz/dsh-valuz-genui@https://codeload.github.com/valuz-ai/dsh-valuz-genui/tar.gz/<commit-sha>': true
 ```
 
-Re-run the `add`, then restart `dsh web` and hard-refresh. Ask the model for a chart or dashboard to verify. **No extra configuration is needed** — the model authors the UI through whatever model the session is using.
+Then restart `dsh web` and hard-refresh. Ask the model for a chart or dashboard to verify. **No extra configuration is needed** — the model authors the UI through whatever model the session is using.
 
 ### Local development
 
@@ -65,7 +69,7 @@ Override the `genui` row by id in your profile's `cordis.patch.yml`:
 - **Authoring quality depends on the model.** A2UI's 76-component graph is richer — and harder to author inline — than a compact DSL. Complex dashboards may need prompt tuning; the sanitizer tolerates and drops malformed components rather than failing the whole surface.
 - **Client bundle is large (~3.5 MB).** recharts, the A2UI renderer, and markdown-it are inlined. Phase 2 splits the chart engine into a lazily loaded plugin-served asset.
 - **Theme bridge is coarse.** The renderer follows light/dark but does not yet map A2UI `--va2-*` tokens onto the host `--dsw-alias-*` scale.
-- **`@valuz/*` are not yet published;** vendored from the sibling checkout and inlined at build time.
+- **Interactions round-trip through the model.** Every `<ui_action>` becomes a user message; there is no local-only handling yet.
 
 ## License
 

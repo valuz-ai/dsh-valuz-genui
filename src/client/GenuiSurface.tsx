@@ -2,7 +2,7 @@
  * The keyed Chat renderer for one generate_ui surface: it draws the A2UI
  * document with the valuz `<A2UIRenderer>`, follows the host light/dark theme,
  * and forwards user interactions to the agent through the injected sender.
- * @module dsh-valuz-genui/client/GenuiSurface
+ * @module @valuz/dsh-valuz-genui/client/GenuiSurface
  */
 
 import { Component, type ErrorInfo, type ReactNode, useEffect, useState } from 'react'

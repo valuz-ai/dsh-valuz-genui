@@ -2,7 +2,7 @@
  * Turns an A2UI client action from a rendered surface into a queued user
  * message on the owning session, so the model receives it as ordinary input
  * (model-visible ⟺ logged). No custom RPC — it rides `conversation.send`.
- * @module dsh-valuz-genui/client/action-bridge
+ * @module @valuz/dsh-valuz-genui/client/action-bridge
  */
 
 import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client'

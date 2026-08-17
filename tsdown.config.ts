@@ -18,7 +18,7 @@ import { bundle, transform } from 'lightningcss'
 
 const resolve = createRequire(import.meta.url).resolve
 
-const PLUGIN_ID = 'dsh-valuz-genui'
+const PLUGIN_ID = '@valuz/dsh-valuz-genui'
 
 /** Platform modules the dsh web shell shares; everything else inlines. */
 const CLIENT_EXTERNALS = [

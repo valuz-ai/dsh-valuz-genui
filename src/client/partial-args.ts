@@ -3,7 +3,7 @@
  * argument buffer (`argsRaw`, the concatenated `tool-call-delta` fragments).
  * Used to render an A2UI surface as the model writes `generate_ui`'s `messages`
  * argument, before the JSON is closed.
- * @module dsh-valuz-genui/client/partial-args
+ * @module @valuz/dsh-valuz-genui/client/partial-args
  */
 
 /**
