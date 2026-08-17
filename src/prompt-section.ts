@@ -11,7 +11,7 @@ import {
   SUPPORTED_CATALOG_ID,
   buildCatalogBlock,
   buildInstructions,
-} from '@valuz/genui'
+} from '@valuz/genui-core'
 import { valuzBaseComponentApis, type ComponentApi } from '@valuz/a2ui/catalog'
 
 /** Section name; tool guidance lives in the 100–199 order band. */

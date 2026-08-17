@@ -9,7 +9,7 @@ import { CallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SkillRuntime from '@deepseek-ai/dsh-skill'
-import { SUPPORTED_CATALOG_ID } from '@valuz/genui'
+import { SUPPORTED_CATALOG_ID } from '@valuz/genui-core'
 import * as Genui from '../../src/index.ts'
 import { isGenuiSurfaceMeta } from '../../src/meta.ts'
 

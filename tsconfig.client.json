@@ -25,7 +25,7 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@valuz/genui": [
+      "@valuz/genui-core": [
         "../valuz-genui/packages/core/src/index.ts"
       ],
       "@valuz/a2ui": [

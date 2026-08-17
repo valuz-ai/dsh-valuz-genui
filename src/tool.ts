@@ -18,7 +18,7 @@ import {
   inspectDocument,
   serializeDocument,
   type A2UIDocumentMessage,
-} from '@valuz/genui'
+} from '@valuz/genui-core'
 import { sanitizeA2UIStream } from '@valuz/a2ui/stream'
 import { valuzBaseComponentApis } from '@valuz/a2ui/catalog'
 import { GENUI_META_KIND, type GenuiSurfaceMeta } from './meta.ts'

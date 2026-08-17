@@ -9,7 +9,7 @@ const upstream = fileURLToPath(new URL('../valuz-genui/packages/', import.meta.u
 
 /** Alias table: bare specifier → absolute source path. */
 export const VALUZ_ALIASES: Record<string, string> = {
-  '@valuz/genui': `${upstream}core/src/index.ts`,
+  '@valuz/genui-core': `${upstream}core/src/index.ts`,
   '@valuz/a2ui/catalog': `${upstream}a2ui/src/catalog/index.ts`,
   '@valuz/a2ui/react': `${upstream}a2ui/src/react/index.ts`,
   '@valuz/a2ui/stream': `${upstream}a2ui/src/stream/index.ts`,
