@@ -18,9 +18,9 @@ import {
   inspectDocument,
   serializeDocument,
   type A2UIDocumentMessage,
-} from '@valuz-genui/core'
-import { sanitizeA2UIStream } from '@valuz-genui/a2ui/stream'
-import { valuzBaseComponentApis } from '@valuz-genui/a2ui/catalog'
+} from '@valuz/genui'
+import { sanitizeA2UIStream } from '@valuz/a2ui/stream'
+import { valuzBaseComponentApis } from '@valuz/a2ui/catalog'
 import { GENUI_META_KIND, type GenuiSurfaceMeta } from './meta.ts'
 
 /** Deployment bounds after config defaulting. */

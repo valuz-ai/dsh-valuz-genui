@@ -6,9 +6,9 @@
  */
 
 import { Component, type ErrorInfo, type ReactNode, useEffect, useState } from 'react'
-import { A2UIRenderer } from '@valuz-genui/a2ui/react'
-import type { A2uiClientAction } from '@valuz-genui/a2ui'
-import '@valuz-genui/a2ui/styles.css'
+import { A2UIRenderer } from '@valuz/a2ui/react'
+import type { A2uiClientAction } from '@valuz/a2ui'
+import '@valuz/a2ui/styles.css'
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { UiAction } from '../meta.ts'
 import css from './GenuiSurface.module.css'

@@ -66,7 +66,7 @@ Override the `genui` row by id in your profile's `cordis.patch.yml`:
 - **Authoring quality depends on the model.** A2UI's 76-component graph is richer — and harder to author inline — than a compact DSL. Complex dashboards may need prompt tuning; the sanitizer tolerates and drops malformed components rather than failing the whole surface.
 - **Client bundle is large (~3.5 MB).** recharts, the A2UI renderer, and markdown-it are inlined. Phase 2 splits the chart engine into a lazily loaded plugin-served asset.
 - **Theme bridge is coarse.** The renderer follows light/dark but does not yet map A2UI `--va2-*` tokens onto the host `--dsw-alias-*` scale.
-- **`@valuz-genui/*` are not yet published;** vendored from the sibling checkout and inlined at build time.
+- **`@valuz/*` are not yet published;** vendored from the sibling checkout and inlined at build time.
 
 ## License
 

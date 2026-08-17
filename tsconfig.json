@@ -25,25 +25,25 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@valuz-genui/core": [
+      "@valuz/genui": [
         "../valuz-genui/packages/core/src/index.ts"
       ],
-      "@valuz-genui/a2ui": [
+      "@valuz/a2ui": [
         "../valuz-genui/packages/a2ui/src/index.ts"
       ],
-      "@valuz-genui/a2ui/catalog": [
+      "@valuz/a2ui/catalog": [
         "../valuz-genui/packages/a2ui/src/catalog/index.ts"
       ],
-      "@valuz-genui/a2ui/react": [
+      "@valuz/a2ui/react": [
         "../valuz-genui/packages/a2ui/src/react/index.ts"
       ],
-      "@valuz-genui/a2ui/stream": [
+      "@valuz/a2ui/stream": [
         "../valuz-genui/packages/a2ui/src/stream/index.ts"
       ],
-      "@valuz-genui/a2ui/theme": [
+      "@valuz/a2ui/theme": [
         "../valuz-genui/packages/a2ui/src/theme/index.ts"
       ],
-      "@valuz-genui/a2ui/styles.css": [
+      "@valuz/a2ui/styles.css": [
         "../valuz-genui/packages/a2ui/src/styles.css"
       ]
     }
