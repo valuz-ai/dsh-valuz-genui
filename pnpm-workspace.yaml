@@ -4,6 +4,9 @@
 allowBuilds:
   esbuild: true
   koffi: false
+minimumReleaseAgeExclude:
+  - '@valuz/a2ui@0.1.0'
+  - '@valuz/genui-core@0.1.0'
 peerDependencyRules:
   allowedVersions:
     # @a2ui/react declares react ^19 but uses only React-18 APIs; dsh's client platform is React 18.

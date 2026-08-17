@@ -22,31 +22,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "@valuz/genui-core": [
-        "../valuz-genui/packages/core/src/index.ts"
-      ],
-      "@valuz/a2ui": [
-        "../valuz-genui/packages/a2ui/src/index.ts"
-      ],
-      "@valuz/a2ui/catalog": [
-        "../valuz-genui/packages/a2ui/src/catalog/index.ts"
-      ],
-      "@valuz/a2ui/react": [
-        "../valuz-genui/packages/a2ui/src/react/index.ts"
-      ],
-      "@valuz/a2ui/stream": [
-        "../valuz-genui/packages/a2ui/src/stream/index.ts"
-      ],
-      "@valuz/a2ui/theme": [
-        "../valuz-genui/packages/a2ui/src/theme/index.ts"
-      ],
-      "@valuz/a2ui/styles.css": [
-        "../valuz-genui/packages/a2ui/src/styles.css"
-      ]
-    }
+    "noEmit": true
   },
   "include": [
     "src/client",

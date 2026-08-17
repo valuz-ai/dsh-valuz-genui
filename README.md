@@ -30,10 +30,9 @@ Re-run the `add`, then restart `dsh web` and hard-refresh. Ask the model for a c
 
 ### Local development
 
-The plugin references the sibling `valuz-genui` checkout (`../valuz-genui`), inlined at build time:
+The generation core and renderer come from npm (`@valuz/genui-core`, `@valuz/a2ui`, from [valuz-ai/valuz-genui](https://github.com/valuz-ai/valuz-genui)); the client bundle inlines them at build time:
 
 ```sh
-git clone https://github.com/valuz-ai/valuz-genui.git
 git clone https://github.com/valuz-ai/dsh-valuz-genui.git
 cd dsh-valuz-genui && pnpm install && pnpm run check
 # install into a profile (rebuild lib/ first with pnpm run build)

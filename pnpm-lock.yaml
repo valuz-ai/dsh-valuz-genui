@@ -8,19 +8,16 @@ importers:
 
   .:
     dependencies:
-      '@a2ui/web_core':
-        specifier: ^0.10.6
-        version: 0.10.6
       '@deepseek-ai/schemastery':
         specifier: ^3.18.1
         version: 3.18.1
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+      '@valuz/a2ui':
+        specifier: ^0.1.0
+        version: 0.1.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)(redux@5.0.1)
+      '@valuz/genui-core':
+        specifier: ^0.1.0
+        version: 0.1.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)(redux@5.0.1)
     devDependencies:
-      '@a2ui/react':
-        specifier: ^0.10.2
-        version: 0.10.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
       '@deepseek-ai/cordis':
         specifier: ^4.0.1
         version: 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
@@ -60,9 +57,6 @@ importers:
       '@testing-library/react':
         specifier: ^16.3.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/markdown-it':
-        specifier: ^14.1.2
-        version: 14.1.2
       '@types/node':
         specifier: ^22.20.0
         version: 22.20.1
@@ -81,24 +75,12 @@ importers:
       lightningcss:
         specifier: ^1.30.1
         version: 1.33.0
-      lucide-react:
-        specifier: ^1.31.0
-        version: 1.31.0(react@18.3.1)
-      markdown-it:
-        specifier: ^14.1.0
-        version: 14.3.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
-      react-is:
-        specifier: ^18.3.1
-        version: 18.3.1
-      recharts:
-        specifier: 3.8.0
-        version: 3.8.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)(redux@5.0.1)
       tsdown:
         specifier: ^0.22.2
         version: 0.22.14(typescript@5.9.3)
@@ -1394,17 +1376,8 @@ packages:
   '@types/katex@0.16.8':
     resolution: {integrity: sha512-trgaNyfU+Xh2Tc+ABIb44a5AYUpicB3uwirOioeOkNPPbmgRNtcWyDeeFRzjPZENO9Vq8gvVqfhaaXWLlevVwg==}
 
-  '@types/linkify-it@5.0.0':
-    resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
-
-  '@types/markdown-it@14.1.2':
-    resolution: {integrity: sha512-promo4eFwuiW+TfGxhi+0x3czqTYJkG8qB17ZUJiVF10Xm7NLVRSLUsfRTU/6h1e24VvRnXCx+hG7li58lkzog==}
-
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
-
-  '@types/mdurl@2.0.0':
-    resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
@@ -1434,6 +1407,15 @@ packages:
 
   '@ungap/structured-clone@1.3.3':
     resolution: {integrity: sha512-60YRaenCQcVjYEKOcG824+DRGGIQ3VKErcBoAEDJZz5bKIs2ZG+X/H9Nk+Q6EVkwJk5QNApxbrc5QtBSwtrXAg==}
+
+  '@valuz/a2ui@0.1.0':
+    resolution: {integrity: sha512-bFw1PyoXINDEJrYJ0556kyjgdMfaAY6YNNU4HP2WJFI8rTUWetZu3lGay5RB0OZXEUN09OiCiiBPvGIWv5+a9g==}
+    peerDependencies:
+      react: '>=18.2.0'
+      react-dom: '>=18.2.0'
+
+  '@valuz/genui-core@0.1.0':
+    resolution: {integrity: sha512-oKE/8jr8xoQK0Knt160SC486RDeuxgBbDWI4R0koXS7oi3xwIR0wyxiSwNWkaV/V5r0lPYXnKAUUZGUJdfEKvg==}
 
   '@vitejs/plugin-react@5.2.0':
     resolution: {integrity: sha512-YmKkfhOAi3wsB1PhJq5Scj3GXMn3WvtQ/JC0xoopuHoXSdmtdStOpFrYaT1kie2YgFBcIe64ROzMYRjCrYOdYw==}
@@ -3932,18 +3914,9 @@ snapshots:
 
   '@types/katex@0.16.8': {}
 
-  '@types/linkify-it@5.0.0': {}
-
-  '@types/markdown-it@14.1.2':
-    dependencies:
-      '@types/linkify-it': 5.0.0
-      '@types/mdurl': 2.0.0
-
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
-
-  '@types/mdurl@2.0.0': {}
 
   '@types/ms@2.1.0': {}
 
@@ -3970,6 +3943,32 @@ snapshots:
   '@types/use-sync-external-store@0.0.6': {}
 
   '@ungap/structured-clone@1.3.3': {}
+
+  '@valuz/a2ui@0.1.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)(redux@5.0.1)':
+    dependencies:
+      '@a2ui/react': 0.10.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
+      '@a2ui/web_core': 0.10.6
+      lucide-react: 1.31.0(react@18.3.1)
+      markdown-it: 14.3.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      recharts: 3.8.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)(redux@5.0.1)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@types/react'
+      - react-is
+      - redux
+
+  '@valuz/genui-core@0.1.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)(redux@5.0.1)':
+    dependencies:
+      '@valuz/a2ui': 0.1.0(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1)(redux@5.0.1)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@types/react'
+      - react
+      - react-dom
+      - react-is
+      - redux
 
   '@vitejs/plugin-react@5.2.0(vite@7.3.6(@types/node@22.20.1)(lightningcss@1.33.0))':
     dependencies:

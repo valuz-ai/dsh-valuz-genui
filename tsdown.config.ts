@@ -6,15 +6,17 @@
  *   everything else (a2ui, recharts, valuz core) inlined; CSS is injected as
  *   a `<style data-plugin>` at factory execution.
  *
- * `prepare` runs this after a git install, self-contained (no monorepo
- * context): the valuz-genui sources are aliased in and inlined, so a consumer
- * needs neither them nor a build step.
+ * `prepare` runs this after a git install, self-contained: the `@valuz/*`
+ * packages install from npm like any dependency, so a consumer needs no
+ * sibling checkout or extra build step.
  */
 import { readFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { basename } from 'node:path'
 import { defineConfig, type UserConfig } from 'tsdown'
 import { bundle, transform } from 'lightningcss'
-import { VALUZ_ALIASES } from './aliases.ts'
+
+const resolve = createRequire(import.meta.url).resolve
 
 const PLUGIN_ID = 'dsh-valuz-genui'
 
@@ -33,24 +35,16 @@ const CLIENT_EXTERNALS = [
 const CSS_VIRTUAL_PREFIX = '\0genui-css:'
 const CSS_VIRTUAL_SUFFIX = '.mjs'
 
-/** Inline the valuz alias table so tsdown resolves the upstream sources. */
-const aliasPlugin = {
-  name: 'genui-valuz-alias',
-  resolveId(source: string): string | null {
-    return VALUZ_ALIASES[source] ?? null
-  },
-}
-
 /** Compile a `.module.css` / `.css` import into an injecting module. */
 const cssPlugin = {
   name: 'genui-css-inline',
   resolveId(source: string, importer: string | undefined): string | null {
-    const aliased = VALUZ_ALIASES[source]
-    const isCss = source.endsWith('.css') || (aliased !== undefined && aliased.endsWith('.css'))
-    if (!isCss) return null
-    const abs = aliased ?? (importer !== undefined && source.startsWith('.')
+    if (!source.endsWith('.css')) return null
+    // Bare specifiers (`@valuz/a2ui/styles.css`) go through the package
+    // exports map; relative ones resolve against the importer.
+    const abs = importer !== undefined && source.startsWith('.')
       ? new URL(source, `file://${importer}`).pathname
-      : source)
+      : resolve(source)
     return CSS_VIRTUAL_PREFIX + abs + CSS_VIRTUAL_SUFFIX
   },
   async load(id: string): Promise<string | null> {
@@ -89,7 +83,6 @@ const host: UserConfig = {
   fixedExtension: false,
   dts: false,
   clean: true,
-  plugins: [aliasPlugin],
 }
 
 const client: UserConfig = {
@@ -108,7 +101,7 @@ const client: UserConfig = {
     'import.meta.env.MODE': JSON.stringify(process.env.NODE_ENV ?? 'production'),
     'import.meta.env': JSON.stringify({ MODE: process.env.NODE_ENV ?? 'production' }),
   },
-  plugins: [cssPlugin, aliasPlugin],
+  plugins: [cssPlugin],
   outputOptions: {
     entryFileNames: 'client.js',
     banner: `window.__ModuleLoader__.load({ id: ${JSON.stringify(PLUGIN_ID)}, factory: (require) => {`,
