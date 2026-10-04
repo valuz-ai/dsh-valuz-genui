@@ -15,3 +15,14 @@
   color: var(--dsw-alias-text-danger, #c0392b);
   font-size: var(--dsw-font-size-sm, 0.85em);
 }
+
+.reference {
+  margin: var(--dsw-space-1, 4px) 0;
+  font-size: var(--dsw-font-size-sm, 0.85em);
+  color: var(--dsw-alias-text-secondary, #888);
+}
+
+.tail {
+  display: flex;
+  flex-direction: column;
+}
