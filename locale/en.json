@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Generative UI (A2UI)",
+    "description": "Lets the model generate interactive UI in the chat — dashboards, charts, KPI cards, tables, and forms — rendered live while it writes, with clicks sent back to the model."
+  }
+}
