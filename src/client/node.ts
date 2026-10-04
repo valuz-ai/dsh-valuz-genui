@@ -2,20 +2,22 @@
  * The Conversation Node that renders a `generate_ui` surface inline — streaming
  * as the model writes the call, then authoritative once the tool settles.
  *
- * It keys by step (`turn:step`, the stable identity), starts on `step/start`,
- * folds `assistant/chunk` `tool-call-delta` for the generate_ui block into the
- * live document, and adopts the durable `tool/result.meta` document at settle
- * (which is also the replay source).
+ * It keys by the generate_ui call id. A named `assistant/live-chunk`
+ * `tool-call-delta` or the durable `tool/call` starts the node; later unnamed
+ * deltas of the same call fold into the live document; the durable
+ * `tool/result.meta` document replaces it at settle. Live chunks are
+ * process-local and are removed when the model attempt settles, so on settle
+ * and on reopen the node rebuilds from `tool/call` and `tool/result`.
  * @module @valuz/dsh-valuz-genui/client/node
  */
 
 import type {
-  ChatConversationViewNode,
   ConversationLocation,
   ConversationMatch,
   ConversationNodeContext,
   ConversationNodeDefinition,
-} from '@deepseek-ai/dsh-client-runtime/client'
+} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { ChatConversationViewNode } from '@deepseek-ai/dsh-client-ui-chat/client'
 import { isGenuiSurfaceMeta } from '../meta.ts'
 import { extractCompleteArrayElements } from './partial-args.ts'
 
@@ -32,7 +34,7 @@ export interface GenuiSurfaceChatData {
   warningCount: number
 }
 
-declare module '@deepseek-ai/dsh-client-ui-conversation/client' {
+declare module '@deepseek-ai/dsh-client-ui-chat/client' {
   interface ChatNodeDataMap {
     /** One generate_ui surface rendered inline. */
     'genui-surface': GenuiSurfaceChatData
@@ -48,63 +50,47 @@ interface SettledSurface {
 }
 
 interface GenuiNodeState {
-  /** Block index of the generate_ui tool call in this step, once seen. */
-  renderIndex: number | null
-  /** The generate_ui call id (surface id), once seen. */
-  surfaceId: string | null
-  /** Accumulated tool-call arguments for the generate_ui block. */
+  /** The generate_ui call id, which is also the surface id. */
+  surfaceId: string
+  /** Accumulated tool-call arguments: streamed deltas, then the complete `tool/call` arguments. */
   argsRaw: string
   /** Authoritative surface, once the tool settled. */
   settled: SettledSurface | null
-  /** Render position: the seq/location of the generate_ui event, so the surface
-   * anchors at the tool call in the flow — not at step/start (which sorts to the top). */
-  anchorSeq: number | null
-  location: ConversationLocation | null
+}
+
+function settledFrom(meta: unknown): SettledSurface | null {
+  if (!isGenuiSurfaceMeta(meta)) return null
+  return {
+    surfaceId: meta.surfaceId,
+    document: meta.document,
+    componentNames: meta.componentNames,
+    warningCount: meta.warnings.length,
+    ...(meta.title === undefined ? {} : { title: meta.title }),
+  }
+}
+
+function startState(match: ConversationMatch): GenuiNodeState {
+  const event = match.event
+  if (event.type === 'assistant/live-chunk' && event.data.chunk.type === 'tool-call-delta') {
+    return { surfaceId: String(event.data.chunk.id), argsRaw: event.data.chunk.argumentsDelta, settled: null }
+  }
+  if (event.type === 'tool/call') {
+    return { surfaceId: String(event.data.callId), argsRaw: event.data.arguments, settled: null }
+  }
+  throw new Error('genui-surface start requires a generate_ui call delta or tool/call')
 }
 
 function foldMatch(state: GenuiNodeState, match: ConversationMatch): GenuiNodeState {
   const event = match.event
-  if (event.type === 'assistant/chunk') {
-    const chunk = event.data.chunk
-    if (chunk.type !== 'tool-call-delta') return state
-    let { renderIndex, surfaceId, anchorSeq, location } = state
-    if (chunk.name === GENERATE_UI_TOOL) {
-      renderIndex = chunk.index
-      surfaceId = String(chunk.id)
-      // Anchor the surface at the tool call, not the step boundary.
-      if (anchorSeq === null) {
-        anchorSeq = event.seq
-        location = match.location
-      }
-    }
-    if (renderIndex !== null && chunk.index === renderIndex) {
-      return { ...state, renderIndex, surfaceId, anchorSeq, location, argsRaw: state.argsRaw + chunk.argumentsDelta }
-    }
-    return { ...state, renderIndex, surfaceId, anchorSeq, location }
+  if (event.type === 'assistant/live-chunk' && event.data.chunk.type === 'tool-call-delta') {
+    return { ...state, argsRaw: state.argsRaw + event.data.chunk.argumentsDelta }
   }
+  if (event.type === 'tool/call') return { ...state, argsRaw: event.data.arguments }
   if (event.type === 'tool/result') {
-    const meta = event.data.meta
-    if (isGenuiSurfaceMeta(meta)) {
-      return {
-        ...state,
-        // On replay (no streamed chunks) the tool/result is the anchor.
-        anchorSeq: state.anchorSeq ?? event.seq,
-        location: state.location ?? match.location,
-        settled: {
-          surfaceId: meta.surfaceId,
-          document: meta.document,
-          componentNames: meta.componentNames,
-          warningCount: meta.warnings.length,
-          ...(meta.title === undefined ? {} : { title: meta.title }),
-        },
-      }
-    }
+    const settled = settledFrom(event.data.meta)
+    return settled === null ? state : { ...state, settled }
   }
   return state
-}
-
-function initial(): GenuiNodeState {
-  return { renderIndex: null, surfaceId: null, argsRaw: '', settled: null, anchorSeq: null, location: null }
 }
 
 /** JSONL body of the complete A2UI messages authored so far. */
@@ -113,33 +99,45 @@ function streamingDocument(argsRaw: string): string {
   return elements.map((element) => JSON.stringify(element)).join('\n')
 }
 
+function nodeLocation(context: ConversationNodeContext<GenuiNodeState>): ConversationLocation {
+  return context.start?.location ?? context.matches[0]?.location ?? { kind: 'unresolved' }
+}
+
 /** The generate_ui surface node. */
 export const genuiSurfaceDefinition: ConversationNodeDefinition<GenuiNodeState> = {
   kind: 'genui-surface',
   target: 'chat',
   match: (event) => {
-    if (event.type === 'step/start') return { id: `${event.data.turn}:${event.data.step}`, role: 'start' }
-    if (event.type === 'assistant/chunk' || event.type === 'tool/result') {
-      return { id: `${event.data.turn}:${event.data.step}`, role: 'update' }
+    if (event.type === 'assistant/live-chunk') {
+      const chunk = event.data.chunk
+      if (chunk.type !== 'tool-call-delta') return null
+      // Only the first delta of a call carries its name; later deltas of a
+      // started generate_ui call update it, and deltas of other calls find no start.
+      if (chunk.name === undefined) return { id: String(chunk.id), role: 'update' }
+      return chunk.name === GENERATE_UI_TOOL ? { id: String(chunk.id), role: 'start' } : null
+    }
+    if (event.type === 'tool/call') {
+      return event.data.name === GENERATE_UI_TOOL ? { id: String(event.data.callId), role: 'start' } : null
+    }
+    if (event.type === 'tool/result' && event.surfaceOp === 'append' && isGenuiSurfaceMeta(event.data.meta)) {
+      return { id: String(event.data.message.source.callId), role: 'update' }
     }
     return null
   },
-  start: () => initial(),
+  start: (_context, match) => startState(match),
   update: (context, match) => foldMatch(context.state, match),
-  // Stream deltas coalesced to a frame; the settled result renders immediately.
-  publication: (match) => (match.event.type === 'assistant/chunk' ? 'animation-frame' : 'immediate'),
+  // Stream deltas coalesced to a frame; the call and its result render immediately.
+  publication: (match) => (match.event.type === 'assistant/live-chunk' ? 'animation-frame' : 'immediate'),
   buildViewNode: (context: ConversationNodeContext<GenuiNodeState>): ChatConversationViewNode | null => {
-    if (context.start === undefined || context.state === undefined) return null
-    const state = context.state
-    const data = viewData(state)
+    const data = context.state === undefined ? null : viewData(context.state)
     if (data === null) return null
     return {
       key: context.key,
       kind: 'genui-surface',
       id: context.id,
       target: 'chat',
-      anchorSeq: state.anchorSeq ?? context.start.event.seq,
-      location: state.location ?? context.start.location,
+      anchorSeq: context.start?.event.seq ?? context.matches[0]?.event.seq ?? 0,
+      location: nodeLocation(context),
       visibility: 'visible',
       data,
     }
@@ -159,11 +157,10 @@ function viewData(state: GenuiNodeState): GenuiSurfaceChatData | null {
       ...(s.title === undefined ? {} : { title: s.title }),
     }
   }
-  if (state.renderIndex === null) return null
   const document = streamingDocument(state.argsRaw)
   if (document.length === 0) return null
   return {
-    surfaceId: state.surfaceId ?? 'streaming',
+    surfaceId: state.surfaceId,
     document,
     status: 'running',
     componentNames: [],

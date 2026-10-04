@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import { CallId } from '@deepseek-ai/dsh-llm'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SkillRuntime from '@deepseek-ai/dsh-skill'
@@ -34,7 +34,7 @@ let calls = 0
 function run(ctx: Context, args: unknown) {
   return ctx.tools.execute({
     signal: new AbortController().signal,
-    callId: CallId(`call-${++calls}`),
+    callId: ToolCallId(`call-${++calls}`),
     name: 'generate_ui',
     arguments: args,
   })

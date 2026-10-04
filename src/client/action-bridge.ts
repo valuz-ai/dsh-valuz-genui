@@ -5,13 +5,11 @@
  * @module @valuz/dsh-valuz-genui/client/action-bridge
  */
 
-import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { formatUiAction, type UiAction } from '../meta.ts'
-
-/** The scope-addressed conversation face this bridge needs. */
-interface ConversationSend {
-  send(text: string): Promise<void>
-}
 
 /**
  * Build the action sender for one session.
@@ -19,10 +17,10 @@ interface ConversationSend {
  * @param sessionId - the session that owns the surface.
  * @returns a function that sends one interaction as a queued user message.
  */
-export function createActionSender(ctx: ClientContext, sessionId: SessionId): (action: UiAction) => void {
+export function createActionSender(ctx: Context, sessionId: SessionId): (action: UiAction) => void {
   return (action: UiAction) => {
     const scoped = ctx.sessions.scope(sessionId)
-    const conversation = scoped?.get('conversation') as ConversationSend | undefined
+    const conversation = scoped?.get('conversation')
     if (conversation === undefined) {
       console.warn('[genui] no conversation service for session; UI action dropped')
       return

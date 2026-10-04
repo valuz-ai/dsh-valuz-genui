@@ -20,16 +20,18 @@ const resolve = createRequire(import.meta.url).resolve
 
 const PLUGIN_ID = '@valuz/dsh-valuz-genui'
 
-/** Platform modules the dsh web shell shares; everything else inlines. */
+/**
+ * Platform modules the dsh web shell shares; everything else inlines. Mirrors
+ * `PLATFORM_MODULES` in deepseek-harness `packages/client/web/src/platform.ts`
+ * (dsh 0.2.0-rc.2); re-check it when the supported dsh range changes.
+ */
 const CLIENT_EXTERNALS = [
   'react', 'react/jsx-runtime', 'react-dom', 'react-dom/client',
   '@deepseek-ai/cordis',
+  '@deepseek-ai/dsh-client-store',
   '@deepseek-ai/dsh-client-ui-slots',
-  '@deepseek-ai/dsh-client-web-react',
   '@deepseek-ai/dsh-client-ui-primitives',
-  '@deepseek-ai/dsh-client-ui-attachment',
-  '@deepseek-ai/dsh-client-schema-form',
-  '@deepseek-ai/dsh-client-runtime/client',
+  '@deepseek-ai/dsh-client-ui-dockkit',
 ]
 
 const CSS_VIRTUAL_PREFIX = '\0genui-css:'
